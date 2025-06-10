@@ -72,8 +72,8 @@ class FirestoreService {
   }
 
   // Match Operations
-  Future<void> createMatch(MatchModel match) async {
-    await _db.collection('matchData').doc(match.id).set(match.toMap());
+  Future<DocumentReference> createMatch(Map<String, dynamic> data) {
+    return FirebaseFirestore.instance.collection('matchData').add(data);
   }
 
   Future<List<MatchModel>> getAllMatches() async {

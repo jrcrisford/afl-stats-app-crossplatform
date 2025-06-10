@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:afl_stats_app/screens/create_match_screen.dart';
 import 'package:afl_stats_app/screens/team_management_screen.dart';
 
 class MainMenuScreen extends StatelessWidget {
@@ -33,7 +34,12 @@ class MainMenuScreen extends StatelessWidget {
             // Create Match Button
             ElevatedButton(
               onPressed: () {
-                // TODO Navigation
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateMatchScreen(),
+                  ),
+                );
               },
               child: const Text('Create Match'),
             ),

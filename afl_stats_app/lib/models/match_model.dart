@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MatchModel {
-  final String id; // match document ID
+  final String id;
   final String teamA;
   final String teamB;
   final DateTime startTime;
