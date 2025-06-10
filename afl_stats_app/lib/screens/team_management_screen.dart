@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/firestore_service.dart';
 import '../../models/team_model.dart';
-import '../../models/player_model.dart';
+import 'package:afl_stats_app/screens/player_management_screen.dart';
 
 class TeamManagementScreen extends StatefulWidget {
   const TeamManagementScreen({Key? key}) : super(key: key);
@@ -30,7 +30,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
     final playerCounts = <String, int>{};
     for (var team in teams) {
       playerCounts[team.name] = players
-          .where((player) => player.team == team.name)
+          .where((player) => player.teamId == team.name)
           .length;
     }
 
@@ -217,7 +217,12 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
                         child: ListTile(
                           title: Text('${team.name} ($count players)'),
                           onTap: () {
-                            //TODO Navigate to player management screen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PlayerManagementScreen(teamName: team.name),
+                              ),
+                            );
                           },
                           trailing: const Icon(Icons.chevron_right),
                         ),

@@ -63,8 +63,12 @@ class FirestoreService {
   Future<void> addPlayer(PlayerModel player) async {
     await _db
         .collection('players')
-        .doc(player.playerName)
+        .doc(player.name)
         .set(player.toMap());
+  }
+
+  Future<void> deletePlayer(String playerName) async {
+    await _db.collection('players').doc(playerName).delete();
   }
 
   // Match Operations
