@@ -32,7 +32,7 @@ class _FirestoreTestScreenState extends State<FirestoreTestScreen> {
       print('Fetching players...');
       List<PlayerModel> players = await _firestore.getAllPlayers();
       for (var player in players) {
-        print('[FIRESTORE TEST] Player: ${player.playerName} - #${player.number} (${player.team})');
+        print('[FIRESTORE TEST] Player: ${player.name} - #${player.number} (${player.teamId})');
       }
 
       // MATCHES

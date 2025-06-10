@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PlayerModel {
-  final String playerName;
+  final String name;
   final int number;
-  final String team;
+  final String teamId;
   final int kick;
   final int handball;
   final int mark;
@@ -12,9 +12,9 @@ class PlayerModel {
   final int behind;
 
   PlayerModel({
-    required this.playerName,
+    required this.name,
     required this.number,
-    required this.team,
+    required this.teamId,
     this.kick = 0,
     this.handball = 0,
     this.mark = 0,
@@ -25,9 +25,9 @@ class PlayerModel {
 
   factory PlayerModel.fromMap(Map<String, dynamic> data) {
     return PlayerModel(
-      playerName: data['name'] ?? '',
+      name: data['name'] ?? '',
       number: data['number'] ?? 0,
-      team: data['teamId'] ?? '',
+      teamId: data['teamId'] ?? '',
       kick: data['kick'] ?? 0,
       handball: data['handball'] ?? 0,
       mark: data['mark'] ?? 0,
@@ -39,9 +39,9 @@ class PlayerModel {
 
   Map<String, dynamic> toMap() {
     return {
-      'playerName': playerName,
+      'name': name,
       'number': number,
-      'team': team,
+      'teamId': teamId,
       'kick': kick,
       'handball': handball,
       'mark': mark,
