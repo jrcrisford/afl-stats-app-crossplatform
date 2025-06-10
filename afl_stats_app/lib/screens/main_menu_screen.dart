@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:afl_stats_app/screens/team_management_screen.dart';
 
 class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({Key? key}) : super(key: key);
@@ -52,7 +53,12 @@ class MainMenuScreen extends StatelessWidget {
             // Team Management Button
             ElevatedButton(
               onPressed: () {
-                // TODO Navigation
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TeamManagementScreen(),
+                  ),
+                );
               },
               child: const Text('Team Management'),
             ),

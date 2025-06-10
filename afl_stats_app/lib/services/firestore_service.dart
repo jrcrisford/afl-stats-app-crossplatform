@@ -16,12 +16,45 @@ class FirestoreService {
   }
 
   Future<void> addTeam(TeamModel team) async {
-    await _db.collection('teamData').doc(team.name).set(team.toMap());
+    await _db.collection('teamData').doc(team.name).set({
+      'name': team.name,
+      'createdAt': team.createdAt,
+    });
+  }
+
+  Future<void> deleteTeam(String teamName) async {
+    await _db.collection('teamData').doc(teamName).delete();
+  }
+
+  Future<void> renameTeam({required String oldName, required String newName}) async {
+    final oldRef = _db.collection('teamData').doc(oldName);
+    final newRef = _db.collection('teamData').doc(newName);
+
+    final snapshot = await oldRef.get();
+    if (snapshot.exists) {
+      final data = snapshot.data();
+      if (data != null) {
+        data['name'] = newName;
+
+        await newRef.set(data);
+        await oldRef.delete();
+
+        // Update players' team references
+        final players = await _db
+            .collection('players')
+            .where('team', isEqualTo: oldName)
+            .get();
+
+        for (var doc in players.docs) {
+          await doc.reference.update({'team': newName});
+        }
+      }
+    }
   }
 
   // Player Operations
   Future<List<PlayerModel>> getAllPlayers() async {
-    final snapshot = await _db.collection('playerData').get();
+    final snapshot = await _db.collection('players').get();
     return snapshot.docs
         .map((doc) => PlayerModel.fromMap(doc.data()))
         .toList();
@@ -29,7 +62,7 @@ class FirestoreService {
 
   Future<void> addPlayer(PlayerModel player) async {
     await _db
-        .collection('playerData')
+        .collection('players')
         .doc(player.playerName)
         .set(player.toMap());
   }
