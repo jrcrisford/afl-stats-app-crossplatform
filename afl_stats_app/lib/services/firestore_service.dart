@@ -84,6 +84,27 @@ class FirestoreService {
   }
 
   // Action Operations
+  Future<void> recordPlayerAction({
+    required String matchId,
+    required String name,
+    required String teamId,
+    required ActionModel action,
+  }) async {
+    final playerRef = _db
+        .collection('matchData')
+        .doc(matchId)
+        .collection('players')
+        .doc(name);
+
+    final playerActionRef = playerRef.collection('actions');
+
+    await addActionToMatch(matchId, action);
+    await playerActionRef.add(action.toMap());
+    await playerRef.update({
+      action.action: FieldValue.increment(1),
+    });
+  }
+
   Future<void> addActionToMatch(String matchId, ActionModel action) async {
     await _db
         .collection('matchData')
