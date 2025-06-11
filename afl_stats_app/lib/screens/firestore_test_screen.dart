@@ -44,7 +44,7 @@ class _FirestoreTestScreenState extends State<FirestoreTestScreen> {
         // ACTIONS within this match
         final actions = await _firestore.getActionsForMatch(match.id);
         for (var action in actions) {
-          print('[FIRESTORE TEST] Action: ${action.action} by ${action.playerName} '
+          print('[FIRESTORE TEST] Action: ${action.action} by ${action.name} '
               '(Q${action.quarter}, ${action.timeInQuarter}s)');
         }
       }
