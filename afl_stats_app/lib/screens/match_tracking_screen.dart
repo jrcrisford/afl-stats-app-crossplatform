@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:afl_stats_app/screens/main_menu_screen.dart';
 import 'package:flutter/material.dart';
 import '../../models/match_model.dart';
 import '../../models/player_model.dart';
@@ -29,9 +30,14 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
   DateTime? _quarterStartTime;
   Duration _elapsedMatch = Duration.zero;
   Duration _elapsedQuarter = Duration.zero;
+  Duration _totalMatchDuration = Duration.zero;
   Timer? _timer;
   bool _isMatchFinished = false;
   List<ActionModel> _actionLog = [];
+  ActionModel? _lastAction;
+  int _teamAScore = 0;
+  int _teamBScore = 0;
+  Timer? _autoEndTimer;
 
   @override
   void initState() {
@@ -81,6 +87,8 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
     _isQuarterRunning = true;
 
     _timer?.cancel();
+    _autoEndTimer?.cancel();
+
     _timer = Timer.periodic(const Duration(seconds: 1), (_)
     {
       final now = DateTime.now();
@@ -88,12 +96,27 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
         _elapsedMatch = now.difference(_matchStartTime!);
         _elapsedQuarter = now.difference(_quarterStartTime!);
       });
+
+      if (_elapsedQuarter.inSeconds >= 20) {
+        _endQuarter();
+      }
+    });
+
+    _autoEndTimer = Timer(const Duration(seconds: 20), () {
+      if (_isQuarterRunning && mounted) {
+        _endQuarter();
+      }
     });
   }
 
   void _endQuarter() {
     _timer?.cancel();
+    _autoEndTimer?.cancel();
     _isQuarterRunning = false;
+
+    if (_quarterStartTime != null) {
+      _totalMatchDuration += DateTime.now().difference(_quarterStartTime!);
+    }
 
     if (_quarter >= 4) {
       setState(() {
@@ -134,6 +157,9 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
             _actionLog = snapshot.docs
                 .map((doc) => ActionModel.fromMap(doc.data()))
                 .toList();
+
+            _teamAScore = _calculateScore(_match!.teamA);
+            _teamBScore = _calculateScore(_match!.teamB);
           });
         });
   }
@@ -168,19 +194,57 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
         children: [
           // Team Names + Scores
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '${_match!.teamA}\n0.0 (0)',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        _match!.teamA,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: _getLeadingTeam() == _match!.teamA && !_isScoresTied()
+                              ? Colors.green
+                              : Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatScore(_match!.teamA),
+                        style: const TextStyle(fontSize: 18),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
-                Text(
-                  '${_match!.teamB}\n0.0 (0)',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        _match!.teamB,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: _getLeadingTeam() == _match!.teamB && !_isScoresTied()
+                              ? Colors.green
+                              : Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatScore(_match!.teamB),
+                        style: const TextStyle(fontSize: 18),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -192,34 +256,49 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Q$_quarter - ${_isQuarterRunning ? "Running" : _isMatchFinished ? "Finished" : "Not Started"}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _isMatchFinished ? Colors.grey : Colors.black,
+                //Quarter Status Text
+                SizedBox(
+                  width: 120,
+                  child: Text(
+                    'Q$_quarter - ${_isQuarterRunning ? "Running" : _isMatchFinished ? "Finished" : "Not Started"}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: _isMatchFinished ? Colors.grey : Colors.black,
+                    ),
                   ),
                 ),
-                Text(
-                  _formatDuration(_elapsedQuarter),
-                  style: const TextStyle(fontSize: 16, fontWeight : FontWeight.w600),
+
+                // Timer
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      _formatDuration(_elapsedQuarter),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                  ),
                 ),
-                TextButton(
-                  onPressed: _isMatchFinished
-                      ? null
-                      : _isQuarterRunning
-                          ? _endQuarter
-                          : _startQuarter,
-                  style: TextButton.styleFrom(foregroundColor: secondaryColor),
-                  child: Text(
-                    _isMatchFinished
-                        ? 'Match Finished'
-                        : _quarter == 4 && _isQuarterRunning
-                            ? 'Finish Match'
-                            : _isQuarterRunning
-                                ? 'End Quarter'
-                                : 'Start Quarter',
+
+                // Start/End Quarter Button
+                SizedBox(
+                  width: 120,
+                  child: TextButton(
+                    onPressed: _isMatchFinished
+                        ? null
+                        : _isQuarterRunning
+                            ? _endQuarter
+                            : _startQuarter,
+                    style: TextButton.styleFrom(foregroundColor: secondaryColor),
+                    child: Text(
+                      _isMatchFinished
+                          ? 'Finished'
+                          : _quarter == 4 && _isQuarterRunning
+                              ? 'Finish Match'
+                              : _isQuarterRunning
+                                  ? 'End Quarter'
+                                  : 'Start Quarter',
+                      textAlign: TextAlign.right,
+                    ),
                   ),
                 ),
               ],
@@ -278,7 +357,56 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
                 foregroundColor: Colors.white,
                 minimumSize: const Size.fromHeight(44),
               ),
-              onPressed: () {},
+              onPressed: () async {
+                if (_match == null) return;
+
+                final teamAScore = _calculateScore(_match!.teamA);
+                final teamBScore = _calculateScore(_match!.teamB);
+                String winner;
+
+                if (teamAScore > teamBScore) {
+                  winner = _match!.teamA;
+                } else if (teamBScore > teamAScore) {
+                  winner = _match!.teamB;
+                } else {
+                  winner = 'Draw';
+                }
+
+                await FirebaseFirestore.instance
+                    .collection('matchData')
+                    .doc(widget.matchId)
+                    .update({
+                      'status': 'finished',
+                      'winner': winner,
+                      'finalScoreA': teamAScore,
+                      'finalScoreB': teamBScore,
+                    });
+
+                setState(() {
+                  _isMatchFinished = true;
+                });
+
+                await showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Match Finished'),
+                    content: Text(winner == 'Draw'
+                        ? 'The match ended in a draw.'
+                        : 'The winner is $winner with a score of $teamAScore - $teamBScore.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => MainMenuScreen()),
+                  (route) => false,
+                );
+              },
               child: const Text('End Match'),
             ),
           ),
@@ -298,6 +426,11 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
                   onPressed: (int index) {
                     setState(() {
                       _selectedTeams = [index == 0, index == 1];
+                      final newTeam = _selectedTeams[0] ? _match!.teamA : _match!.teamB;
+                      final newFilteredPlayers = _matchPlayers
+                          .where((player) => player.teamId == newTeam)
+                          .toList();
+                      _selectedPlayerName = newFilteredPlayers.isNotEmpty ? newFilteredPlayers.first.name : null;
                     });
                   },
                   borderRadius: BorderRadius.circular(8),
@@ -343,11 +476,11 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 20),
 
-                // Action Buttons Grid (smaller, square)
+                // Action Buttons Grid
                 SizedBox(
-                  height: 130,
+                  height: 140,
                   child: GridView.count(
                     crossAxisCount: 3,
                     childAspectRatio: 2.0,
@@ -362,33 +495,69 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
                           backgroundColor: Colors.blue.shade300,
                           padding: const EdgeInsets.all(0),
                         ),
-                        onPressed: () async {
-                          if (_selectedPlayerName == null) return;
+                        onPressed: (!_isQuarterRunning || _isMatchFinished)
+                          ? null
+                          : () async {
+                            if (_selectedPlayerName == null) return;
 
-                          final selectedPlayer = _matchPlayers.firstWhere(
-                            (player) => player.name == _selectedPlayerName,
-                            orElse: () => throw Exception('Player not found'),
-                          );
+                            final selectedPlayer = _matchPlayers.firstWhere(
+                              (player) => player.name == _selectedPlayerName,
+                              orElse: () => throw Exception('Player not found'),
+                            );
 
-                          final action = ActionModel(
-                            action: label.toLowerCase(),
-                            name: selectedPlayer.name,
-                            teamId: selectedPlayer.teamId,
-                            quarter: _quarter,
-                            timeInMatch: _elapsedMatch.inSeconds,
-                            timeInQuarter: _elapsedQuarter.inSeconds,
-                            timestamp: DateTime.now(),
-                          );
+                            if (label == 'Goal') {
+                              if (_lastAction == null || _lastAction!.action != 'kick') {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Goal must follow a kick.')),
+                                );
+                                return;
+                              }
+                              if (_lastAction!.teamId != selectedPlayer.teamId) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Goal must be recorded by the same team as the last kick.')),
+                                );
+                                return;
+                              }
+                            }
 
-                          await FirestoreService().recordPlayerAction(
-                            matchId: widget.matchId,
-                            name: selectedPlayer.name,
-                            teamId: selectedPlayer.teamId,
-                            action: action,
-                          );
+                            if (label == 'Behind') {
+                              if (_lastAction == null || (_lastAction!.action != 'kick' && _lastAction!.action != 'handball')) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Behind must follow a kick or handball.')),
+                                );
+                                return;
+                              }
+                              if (_lastAction!.teamId != selectedPlayer.teamId) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Behind must be recorded by the same team as the last kick or handball.')),
+                                );
+                                return;
+                              }
+                            }
 
-                          print('Recorded: ${action.action} by ${selectedPlayer.name} in quarter $_quarter');
-                        },
+                            final action = ActionModel(
+                              action: label.toLowerCase(),
+                              name: selectedPlayer.name,
+                              teamId: selectedPlayer.teamId,
+                              quarter: _quarter,
+                              timeInMatch: _elapsedMatch.inSeconds,
+                              timeInQuarter: _elapsedQuarter.inSeconds,
+                              timestamp: DateTime.now(),
+                            );
+
+                            await FirestoreService().recordPlayerAction(
+                              matchId: widget.matchId,
+                              name: selectedPlayer.name,
+                              teamId: selectedPlayer.teamId,
+                              action: action,
+                            );
+
+                            setState(() {
+                              _lastAction = action;
+                            });
+
+                            print('Recorded: ${action.action} by ${selectedPlayer.name} in quarter $_quarter');
+                          },
                         child: Text(label, style: const TextStyle(fontSize: 14)),
                       );
                     }).toList(),
@@ -402,10 +571,37 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
     );
   }
 
+  int _calculateScore(String teamId) {
+    final teamActions = _actionLog.where((action) => action.teamId == teamId);
+    final goals = teamActions.where((action) => action.action == 'goal').length;
+    final behinds = teamActions.where((action) => action.action == 'behind').length;
+    return goals * 6 + behinds;
+  }
+
+  String _formatScore(String teamId) {
+    final teamActions = _actionLog.where((action) => action.teamId == teamId);
+    final goals = teamActions.where((action) => action.action == 'goal').length;
+    final behinds = teamActions.where((action) => action.action == 'behind').length;
+    final total = goals * 6 + behinds;
+    return '$goals.$behinds ($total)';
+  }
+
   String _formatDuration(Duration duration) {
     final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
     final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$minutes:$seconds';
+  }
+
+  String _getLeadingTeam() {
+    final scoreA = _calculateScore(_match!.teamA);
+    final scoreB = _calculateScore(_match!.teamB);
+    return scoreA > scoreB ? _match!.teamA : _match!.teamB;
+  }
+
+  bool _isScoresTied() {
+    final scoreA = _calculateScore(_match!.teamA);
+    final scoreB = _calculateScore(_match!.teamB);
+    return scoreA == scoreB;
   }
 
   String _capitalize(String text) =>
