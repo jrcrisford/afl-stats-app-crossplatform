@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:afl_stats_app/screens/main_menu_screen.dart';
 import 'package:afl_stats_app/screens/player_stats_screen.dart';
+import 'package:afl_stats_app/screens/team_stats_screen.dart';
 import 'package:flutter/material.dart';
 import '../../models/match_model.dart';
 import '../../models/player_model.dart';
@@ -351,7 +352,17 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
                       },
                       child: const Text('Player Stats')
                     ),
-                OutlinedButton(onPressed: () {}, child: const Text('Team Stats')),
+                OutlinedButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => TeamStatsScreen(
+                            matchId: widget.matchId,
+                            match: _match!,
+                          ),
+                        ),
+                      );
+                    }, child: const Text('Team Stats')),
               ],
             ),
           ),
