@@ -125,4 +125,16 @@ class FirestoreService {
         .toList();
   }
 
+  Future<List<ActionModel>> getActionsForPlayer(String matchId, String playerName) async {
+    final snapshot = await _db
+        .collection('matchData')
+        .doc(matchId)
+        .collection('players')
+        .doc(playerName)
+        .collection('actions')
+        .get();
+
+    return snapshot.docs.map((doc) => ActionModel.fromMap(doc.data())).toList();
+  }
+
 }
