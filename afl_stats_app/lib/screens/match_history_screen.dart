@@ -4,6 +4,8 @@ import '../models/action_model.dart';
 import '../services/firestore_service.dart';
 import 'team_stats_screen.dart';
 import 'player_stats_screen.dart';
+import 'package:share_plus/share_plus.dart';
+import 'dart:convert';
 
 class MatchHistoryScreen extends StatefulWidget {
   final MatchModel match;
@@ -116,7 +118,52 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                       side: BorderSide(color: primaryColor),
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
-                    onPressed: () {},
+                    onPressed: () async {
+                      final actions = await _actionsFuture;
+
+                      showModalBottomSheet(
+                        context: context,
+                        builder: (context) {
+                          return SafeArea(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ListTile(
+                                  leading: const Icon(Icons.text_snippet),
+                                  title: const Text('Share as Plain Text'),
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    final text = actions.map((a) {
+                                      final d = Duration(seconds: a.timeInQuarter);
+                                      final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+                                      final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+                                      return '${a.name} – ${a.action} – Q${a.quarter} – $m:$s';
+                                    }).join('\n');
+
+                                    Share.share(text, subject: 'Match Action List');
+                                  },
+                                ),
+                                ListTile(
+                                  leading: const Icon(Icons.code),
+                                  title: const Text('Share as JSON'),
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    final jsonText = jsonEncode(actions.map((a) => {
+                                      'name': a.name,
+                                      'action': a.action,
+                                      'quarter': a.quarter,
+                                      'timeInQuarter': a.timeInQuarter,
+                                    }).toList());
+
+                                    Share.share(jsonText, subject: 'Match Action List (JSON)');
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
                     child: const Text("Share Action List"),
                   ),
                 ],
