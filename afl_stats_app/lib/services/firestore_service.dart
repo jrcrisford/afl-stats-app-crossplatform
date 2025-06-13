@@ -77,10 +77,11 @@ class FirestoreService {
   }
 
   Future<List<MatchModel>> getAllMatches() async {
-    final snapshot = await _db.collection('matchData').get();
-    return snapshot.docs
-        .map((doc) => MatchModel.fromDoc(doc))
-        .toList();
+    final snapshot = await FirebaseFirestore.instance
+        .collection('matchData')
+        .orderBy('startTime', descending: true)
+        .get();
+    return snapshot.docs.map((doc) => MatchModel.fromDoc(doc)).toList();
   }
 
   // Action Operations
@@ -118,6 +119,7 @@ class FirestoreService {
         .collection('matchData')
         .doc(matchId)
         .collection('matchActions')
+        .orderBy('timestamp')
         .get();
 
     return snapshot.docs
