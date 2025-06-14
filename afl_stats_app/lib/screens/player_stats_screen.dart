@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import '../models/action_model.dart';
 import '../models/player_model.dart';
@@ -153,15 +155,27 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
                     Container(
                       width: 120,
                       height: 100,
-                      color: Colors.grey.shade300,
-                      child: const Icon(Icons.person, size: 60),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(8),
+                        image: _playerA?.imageUri != null && File(_playerA!.imageUri!).existsSync()
+                            ? DecorationImage(image: FileImage(File(_playerA!.imageUri!)), fit: BoxFit.cover)
+                            : null,
+                      ),
+                      child: _playerA?.imageUri == null ? const Icon(Icons.person, size: 60) : null,
                     ),
                     Container(
                       width: 120,
                       height: 100,
-                      color: Colors.grey.shade300,
-                      child: const Icon(Icons.person, size: 60),
-                    ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(8),
+                        image: _playerB?.imageUri != null && File(_playerB!.imageUri!).existsSync()
+                            ? DecorationImage(image: FileImage(File(_playerB!.imageUri!)), fit: BoxFit.cover)
+                            : null,
+                      ),
+                      child: _playerB?.imageUri == null ? const Icon(Icons.person, size: 60) : null,
+                    )
                   ],
                 ),
                 const SizedBox(height: 24),

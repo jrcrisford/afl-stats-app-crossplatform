@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../services/firestore_service.dart';
 import '../../models/player_model.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 class PlayerManagementScreen extends StatefulWidget {
   final String teamName;
@@ -193,6 +196,37 @@ class _PlayerManagementScreenState extends State<PlayerManagementScreen> {
     );
   }
 
+  Future<String?> _pickAndSaveImage(String playerName) async {
+    final picker = ImagePicker();
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Image Source'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, ImageSource.camera),
+            child: const Text('Camera'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, ImageSource.gallery),
+            child: const Text('Gallery'),
+          ),
+        ],
+      ),
+    );
+
+    if (source == null) return null;
+
+    final pickedFile = await picker.pickImage(source: source);
+    if (pickedFile == null) return null;
+
+    final directory = await getApplicationDocumentsDirectory();
+    final path = '${directory.path}/$playerName.png';
+    final savedImage = await File(pickedFile.path).copy(path);
+
+    return savedImage.path;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -304,10 +338,31 @@ class _PlayerManagementScreenState extends State<PlayerManagementScreen> {
                   child: ListTile(
                     title: Text('#${player.number} - ${player.name}'),
                     leading: GestureDetector(
-                      onTap: () {
-                        // TODO: select image
+                      onTap: () async {
+                        final imagePath = await _pickAndSaveImage(player.name);
+                        if (imagePath != null) {
+                          final updatedPlayer = PlayerModel(
+                            name: player.name,
+                            number: player.number,
+                            teamId: player.teamId,
+                            kick: player.kick,
+                            handball: player.handball,
+                            mark: player.mark,
+                            tackle: player.tackle,
+                            goal: player.goal,
+                            behind: player.behind,
+                            imageUri: imagePath,
+                          );
+                          await _firestore.addPlayer(updatedPlayer);
+                          await _loadPlayers();
+                        }
                       },
-                      child: const CircleAvatar(child: Icon(Icons.person)),
+                      child: CircleAvatar(
+                        backgroundImage: player.imageUri != null && File(player.imageUri!).existsSync()
+                            ? FileImage(File(player.imageUri!))
+                            : null,
+                        child: player.imageUri == null ? const Icon(Icons.person) : null,
+                      ),
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
