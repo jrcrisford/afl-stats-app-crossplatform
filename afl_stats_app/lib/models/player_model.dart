@@ -10,6 +10,7 @@ class PlayerModel {
   final int tackle;
   final int goal;
   final int behind;
+  final String? imageUri;
 
   PlayerModel({
     required this.name,
@@ -21,6 +22,7 @@ class PlayerModel {
     this.tackle = 0,
     this.goal = 0,
     this.behind = 0,
+    this.imageUri,
   });
 
   factory PlayerModel.fromMap(Map<String, dynamic> data) {
@@ -34,6 +36,7 @@ class PlayerModel {
       tackle: data['tackle'] ?? 0,
       goal: data['goal'] ?? 0,
       behind: data['behind'] ?? 0,
+      imageUri: data['imageUri'],
     );
   }
 
@@ -48,6 +51,7 @@ class PlayerModel {
       'tackle': tackle,
       'goal': goal,
       'behind': behind,
+      if (imageUri != null) 'imageUri': imageUri,
     };
   }
 }
