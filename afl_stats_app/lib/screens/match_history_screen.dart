@@ -6,6 +6,7 @@ import 'team_stats_screen.dart';
 import 'player_stats_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:convert';
+import 'dart:io';
 
 class MatchHistoryScreen extends StatefulWidget {
   final MatchModel match;
@@ -225,99 +226,84 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
     final Color colorA = isEqual ? Colors.black : (isAHigher ? Colors.green : Colors.black);
     final Color colorB = isEqual ? Colors.black : (!isAHigher ? Colors.green : Colors.black);
 
+    // Cumulative quarter score breakdown
+    Score runningA = Score();
+    Score runningB = Score();
+
+    List<Widget> quarterRows = [];
+
+    for (int q = 1; q <= 4; q++) {
+      final a = scoreMap[teamA]?[q] ?? Score();
+      final b = scoreMap[teamB]?[q] ?? Score();
+      final label = q == 4 ? "Final" : "Quarter $q";
+
+      runningA += a;
+      runningB += b;
+
+      final int pointsA = runningA.totalPoints;
+      final int pointsB = runningB.totalPoints;
+      final bool isEqual = pointsA == pointsB;
+      final bool isAHigher = pointsA > pointsB;
+
+      final colA = isEqual ? Colors.black : (isAHigher ? Colors.green : Colors.black);
+      final colB = isEqual ? Colors.black : (!isAHigher ? Colors.green : Colors.black);
+
+      quarterRows.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(runningA.formatted(), style: TextStyle(color: colA, fontSize: 16)),
+                ),
+              ),
+              const SizedBox(width: 16),
+              SizedBox(
+                width: 100,
+                child: Center(
+                  child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(runningB.formatted(), style: TextStyle(color: colB, fontSize: 16)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Header Row: Team Names + Scores
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Column(
               children: [
-                Text(
-                  teamA,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
+                Text(teamA, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text(
-                  totalA.formatted(),
-                  style: TextStyle(color: colorA, fontSize: 18),
-                ),
+                Text(totalA.formatted(), style: TextStyle(color: colorA, fontSize: 18)),
               ],
             ),
             Column(
               children: [
-                Text(
-                  teamB,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
+                Text(teamB, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text(
-                  totalB.formatted(),
-                  style: TextStyle(color: colorB, fontSize: 18),
-                ),
+                Text(totalB.formatted(), style: TextStyle(color: colorB, fontSize: 18)),
               ],
             ),
           ],
         ),
         const SizedBox(height: 12),
         const Divider(thickness: 1.2),
-
-        // Quarter Breakdown
-        ...List.generate(4, (index) {
-          final q = index + 1;
-          final a = scoreMap[teamA]?[q] ?? Score();
-          final b = scoreMap[teamB]?[q] ?? Score();
-          final label = q == 4 ? "Final" : "Quarter $q";
-          final int pointsA = a.totalPoints;
-          final int pointsB = b.totalPoints;
-          final bool isEqual = pointsA == pointsB;
-          final bool isAHigher = pointsA > pointsB;
-          final Color colorA = isEqual ? Colors.black : (isAHigher ? Colors.green : Colors.black);
-          final Color colorB = isEqual ? Colors.black : (!isAHigher ? Colors.green : Colors.black);
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6.0),
-            child: Row(
-              children: [
-                // Team A score
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      a.formatted(),
-                      style: TextStyle(color: colorA, fontSize: 16),
-                    ),
-                  ),
-                ),
-
-                // Quarter label
-                const SizedBox(width: 16),
-                SizedBox(
-                  width: 100,
-                  child: Center(
-                    child: Text(
-                      label,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-
-                // Team B score
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      b.formatted(),
-                      style: TextStyle(color: colorB, fontSize: 16),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
+        ...quarterRows,
         const SizedBox(height: 12),
         const Divider(thickness: 1.2),
       ],
