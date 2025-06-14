@@ -13,6 +13,8 @@ class MainMenuScreen extends StatefulWidget {
 }
 
 class _MainMenuScreenState extends State<MainMenuScreen> {
+  final Color primaryColor = const Color(0xFF002B5C);
+  final Color bgColor = const Color(0xFFF1F1F1);
 
   void _showMatchPicker(BuildContext context) async {
     final firestoreService = FirestoreService();
@@ -64,7 +66,12 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('AFL Stats Tracker')),
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        backgroundColor: primaryColor,
+        elevation: 0,
+        toolbarHeight: 0,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -87,8 +94,13 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             ),
             const SizedBox(height: 40.0),
 
-            // Create Match Button
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: primaryColor,
+                side: BorderSide(color: primaryColor),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -102,16 +114,26 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
             const SizedBox(height: 16.0),
 
-            // Match History Button
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: primaryColor,
+                side: BorderSide(color: primaryColor),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
               onPressed: () => _showMatchPicker(context),
               child: const Text('Match History'),
             ),
 
             const SizedBox(height: 16.0),
 
-            // Team Management Button
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: primaryColor,
+                side: BorderSide(color: primaryColor),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -121,6 +143,14 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 );
               },
               child: const Text('Team Management'),
+            ),
+
+            const SizedBox(height: 32.0),
+
+            const Text(
+              'Developed by Joshua Crisford\nUTAS KIT305 2025',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
         ),

@@ -19,6 +19,9 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
   List<TeamModel> _allTeams = [];
   Map<String, int> _playerCounts = {};
 
+  final Color primaryColor = const Color(0xFF002B5C);
+  final Color bgColor = const Color(0xFFF1F1F1);
+
   bool get _canStartMatch {
     if (_teamA == null || _teamB == null) return false;
     if (_teamA!.name == _teamB!.name) return false;
@@ -54,7 +57,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
     final selected = await showDialog<TeamModel>(
       context: context,
       builder: (context) => SimpleDialog(
-        title: Text('Select Team'),
+        title: const Text('Select Team'),
         children: _allTeams.map((team) {
           return SimpleDialogOption(
             onPressed: () => Navigator.pop(context, team),
@@ -76,7 +79,6 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
   }
 
   void _startMatch() async {
-    // Create the match document
     final matchRef = await _firestore.createMatch({
       'teamA': _teamA!.name,
       'teamB': _teamB!.name,
@@ -85,14 +87,12 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
       'status': 'ongoing',
     });
 
-    // Fetch the players
     final allPlayers = await _firestore.getAllPlayers();
+    final selectedPlayers = allPlayers
+        .where((player) =>
+    player.teamId == _teamA!.name || player.teamId == _teamB!.name)
+        .toList();
 
-    // Filter players from selected teams
-    final selectedPlayers = allPlayers.where((player) =>
-      player.teamId == _teamA!.name || player.teamId == _teamB!.name).toList();
-
-    // Write to match's players collection
     final batch = FirebaseFirestore.instance.batch();
     for (final player in selectedPlayers) {
       final playerRef = matchRef.collection('players').doc(player.name);
@@ -112,7 +112,6 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
     await batch.commit();
     if (!mounted) return;
 
-    // Navigate to the match tracking screen
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -124,18 +123,39 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: bgColor,
       appBar: AppBar(
-        title: const Text('Match Setup'),
+        backgroundColor: primaryColor,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Select Teams',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              'Match Setup',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Select two teams to start a match. Teams must have at least 2 players to proceed.',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
+            const Divider(),
+
+            // Team selectors
+            const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -143,12 +163,26 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
                 _buildTeamColumn('Team B', _teamB, () => _selectTeam(false)),
               ],
             ),
-            const SizedBox(height: 32),
+
+            const SizedBox(height: 24),
             const Divider(),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: _canStartMatch ? _startMatch : null,
-              child: const Text('Start Match'),
+
+            // Start button
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _canStartMatch ? _startMatch : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                  _canStartMatch ? Colors.redAccent : Colors.grey,
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                child: const Text(
+                  'Start Match',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
+              ),
             ),
           ],
         ),
@@ -156,17 +190,25 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
     );
   }
 
-  Widget _buildTeamColumn(String label, TeamModel? team, VoidCallback onSelect) {
+  Widget _buildTeamColumn(
+      String label, TeamModel? team, VoidCallback onSelect) {
     final playerCount = team != null ? _playerCounts[team.name] ?? 0 : '-';
+
     return Column(
       children: [
         Text(label, style: const TextStyle(fontSize: 16)),
         const SizedBox(height: 8),
         Text('Players: $playerCount'),
         const SizedBox(height: 8),
-        ElevatedButton(
-          onPressed: onSelect,
-          child: Text(team != null ? team.name : 'Select $label'),
+        SizedBox(
+          width: 140,
+          child: ElevatedButton(
+            onPressed: onSelect,
+            child: Text(
+              team != null ? team.name : 'Select $label',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ),
       ],
     );

@@ -187,10 +187,14 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
 
     return Scaffold(
       backgroundColor: bgColor,
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        title: const Text('Match Tracking'),
-        foregroundColor: Colors.white,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(20),
+        child: AppBar(
+          backgroundColor: primaryColor,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          title: const SizedBox.shrink(),
+        ),
       ),
       body: Column(
         children: [
@@ -315,7 +319,7 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
             child: Text('Action Log', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
           Container(
-            height: 100,
+            height: 130,
             margin: const EdgeInsets.symmetric(horizontal: 12),
             padding: const EdgeInsets.all(8),
             color: Colors.grey.shade300,
