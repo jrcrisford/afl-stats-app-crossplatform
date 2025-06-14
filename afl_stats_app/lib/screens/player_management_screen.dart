@@ -14,8 +14,16 @@ class PlayerManagementScreen extends StatefulWidget {
 class _PlayerManagementScreenState extends State<PlayerManagementScreen> {
   final FirestoreService _firestore = FirestoreService();
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  List<PlayerModel> _filteredPlayers = [];
+
   List<PlayerModel> _players = [];
   bool _isLoading = true;
+
+  final Color primaryColor = const Color(0xFF002B5C);
+  final Color secondaryColor = const Color(0xFFFF0000);
+  final Color bgColor = const Color(0xFFF1F1F1);
 
   @override
   void initState() {
@@ -25,13 +33,19 @@ class _PlayerManagementScreenState extends State<PlayerManagementScreen> {
 
   Future<void> _loadPlayers() async {
     final players = await _firestore.getAllPlayers();
-    for (var p in players) {
-      debugPrint('[DEBUG] Loaded player: ${p.name}, team: "${p.teamId}", widget.teamName: "${widget.teamName}"');
-    }
-
     setState(() {
       _players = players.where((p) => p.teamId == widget.teamName).toList();
+      _filterPlayers();
       _isLoading = false;
+    });
+  }
+
+  void _filterPlayers() {
+    setState(() {
+      _filteredPlayers = _players.where((player) {
+        return player.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            player.number.toString().contains(_searchQuery);
+      }).toList();
     });
   }
 
@@ -71,6 +85,16 @@ class _PlayerManagementScreenState extends State<PlayerManagementScreen> {
               if (name.isEmpty || number == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Please enter valid player details')),
+                );
+                return;
+              }
+
+              final allPlayers = await _firestore.getAllPlayers();
+              final nameExists = allPlayers.any((p) => p.name.toLowerCase() == name.toLowerCase());
+
+              if (nameExists) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Player "$name" already exists')),
                 );
                 return;
               }
@@ -132,8 +156,17 @@ class _PlayerManagementScreenState extends State<PlayerManagementScreen> {
                 return;
               }
 
-              // Delete the old player entry if the name was changed
-              if (newName != player.name) {
+              final allPlayers = await _firestore.getAllPlayers();
+              final nameExists = allPlayers.any((p) => p.name.toLowerCase() == newName.toLowerCase() && p.name != player.name);
+
+              if (nameExists) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Player "$newName" already exists')),
+                );
+                return;
+              }
+
+              if (newName.toLowerCase() != player.name.toLowerCase()) {
                 await _firestore.deletePlayer(player.name);
               }
 
@@ -163,19 +196,22 @@ class _PlayerManagementScreenState extends State<PlayerManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: bgColor,
       appBar: AppBar(
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
         title: Text(widget.teamName),
-        leading: BackButton(),
+        leading: const BackButton(),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12.0),
             child: TextButton.icon(
               onPressed: _showAddPlayerDialog,
-              icon: const Icon(Icons.add, color: Colors.black),
+              icon: const Icon(Icons.add, color: Colors.white),
               label: const Text(
                 'Add Player',
-                style: TextStyle(color: Colors.black),
-              )
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ),
         ],
@@ -190,12 +226,20 @@ class _PlayerManagementScreenState extends State<PlayerManagementScreen> {
               style: TextStyle(color: Colors.grey),
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                _searchQuery = value.trim();
+                _filterPlayers();
+              },
               decoration: InputDecoration(
                 hintText: 'Search players...',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
           ),
@@ -204,29 +248,29 @@ class _PlayerManagementScreenState extends State<PlayerManagementScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : ListView.builder(
-              itemCount: _players.length,
+              itemCount: _filteredPlayers.length,
               itemBuilder: (context, index) {
-                final player = _players[index];
+                final player = _filteredPlayers[index];
                 return Dismissible(
                   key: Key(player.name),
                   background: Container(
-                    color: Colors.blue,
+                    color: Colors.green[100],
                     alignment: Alignment.centerLeft,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: const Icon(Icons.edit, color: Colors.white),
+                    child: Icon(Icons.edit, color: primaryColor),
                   ),
                   secondaryBackground: Container(
-                    color: Colors.red,
+                    color: Colors.red[100],
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: const Icon(Icons.delete, color: Colors.white),
+                    child: Icon(Icons.delete, color: secondaryColor),
                   ),
                   confirmDismiss: (direction) async {
                     if (direction == DismissDirection.startToEnd) {
                       _showEditPlayerDialog(player);
-                      return false; // Don’t dismiss the item, just open edit dialog
-                    } else if (direction == DismissDirection.endToStart) {
-                      final confirmed = await showDialog(
+                      return false;
+                    } else {
+                      final confirm = await showDialog(
                         context: context,
                         builder: (context) => AlertDialog(
                           title: const Text('Delete Player'),
@@ -243,9 +287,8 @@ class _PlayerManagementScreenState extends State<PlayerManagementScreen> {
                           ],
                         ),
                       );
-                      return confirmed;
+                      return confirm == true;
                     }
-                    return false;
                   },
                   onDismissed: (direction) async {
                     if (direction == DismissDirection.endToStart) {
