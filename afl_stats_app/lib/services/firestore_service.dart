@@ -84,6 +84,36 @@ class FirestoreService {
     return snapshot.docs.map((doc) => MatchModel.fromDoc(doc)).toList();
   }
 
+  Future<PlayerModel?> getMVP(String matchId) async {
+    final playersSnapshot = await _db
+        .collection('matchData')
+        .doc(matchId)
+        .collection('players')
+        .get();
+
+    PlayerModel? mvp;
+    int highestScore = -1;
+
+    for (var doc in playersSnapshot.docs) {
+      final data = doc.data();
+      final player = PlayerModel.fromMap(data);
+
+      int score = (player.goal * 6) +
+          (player.behind * 1) +
+          (player.kick * 1) +
+          (player.handball * 1) +
+          (player.mark * 1) +
+          (player.tackle * 2);
+
+      if (score > highestScore) {
+        highestScore = score;
+        mvp = player;
+      }
+    }
+
+    return mvp;
+  }
+
   // Action Operations
   Future<void> recordPlayerAction({
     required String matchId,

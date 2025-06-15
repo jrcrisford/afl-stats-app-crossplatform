@@ -21,11 +21,17 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
   PlayerModel? _playerA;
   PlayerModel? _playerB;
   int _selectedQuarter = 0; // 0 = All
+  PlayerModel? _mvpPlayer;
 
   @override
   void initState() {
     super.initState();
     _loadPlayers();
+    _firestore.getMVP (widget.matchId).then((player) {
+      setState(() {
+        _mvpPlayer = player;
+      });
+    });
   }
 
   Future<void> _loadPlayers() async {
@@ -123,7 +129,12 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 12),
-                const Text('🏅 MVP: TBA', style: TextStyle(fontSize: 18)),
+                Text(
+                  _mvpPlayer != null
+                      ? '🏅 MVP: ${_mvpPlayer!.name} (#${_mvpPlayer!.number})'
+                      : '🏅 MVP: Loading...',
+                  style: const TextStyle(fontSize: 18),
+                ),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,

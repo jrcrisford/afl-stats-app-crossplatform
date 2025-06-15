@@ -40,6 +40,7 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
   int _teamAScore = 0;
   int _teamBScore = 0;
   Timer? _autoEndTimer;
+  PlayerModel? _mvpPlayer;
 
   @override
   void initState() {
@@ -407,6 +408,11 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
                       'finalScoreB': teamBScore,
                     });
 
+                final mvp = await FirestoreService().getMVP(widget.matchId);
+                setState(() {
+                  _mvpPlayer = mvp;
+                });
+
                 setState(() {
                   _isMatchFinished = true;
                 });
@@ -415,9 +421,18 @@ class _MatchTrackingScreenState extends State<MatchTrackingScreen> {
                   context: context,
                   builder: (context) => AlertDialog(
                     title: const Text('Match Finished'),
-                    content: Text(winner == 'Draw'
-                        ? 'The match ended in a draw.'
-                        : 'The winner is $winner with a score of $teamAScore - $teamBScore.'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(winner == 'Draw'
+                            ? 'The match ended in a draw.'
+                            : 'The winner is $winner with a score of $teamAScore - $teamBScore.'),
+                        const SizedBox(height: 12),
+                        if (_mvpPlayer != null)
+                          Text('🏆 MVP: ${_mvpPlayer!.name} (#${_mvpPlayer!.number})'),
+                      ],
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
