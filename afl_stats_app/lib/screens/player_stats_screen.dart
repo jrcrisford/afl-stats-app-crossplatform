@@ -35,7 +35,7 @@ class _PlayerStatsScreenState extends State<PlayerStatsScreen> {
   }
 
   Future<void> _loadPlayers() async {
-    final players = await _firestore.getAllPlayers();
+    final players = await _firestore.getPlayersForMatch(widget.matchId);
     setState(() {
       _players = players;
       if (players.length >= 2) {

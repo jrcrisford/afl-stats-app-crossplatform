@@ -71,6 +71,16 @@ class FirestoreService {
     await _db.collection('players').doc(playerName).delete();
   }
 
+  Future<List<PlayerModel>> getPlayersForMatch(String matchId) async {
+    final snapshot = await _db
+        .collection('matchData')
+        .doc(matchId)
+        .collection('players')
+        .get();
+
+    return snapshot.docs.map((doc) => PlayerModel.fromMap(doc.data())).toList();
+  }
+
   // Match Operations
   Future<DocumentReference> createMatch(Map<String, dynamic> data) {
     return FirebaseFirestore.instance.collection('matchData').add(data);
