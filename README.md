@@ -209,6 +209,20 @@ These resources were used to better understand Flutter development, Firestore in
 
 ---
 
+### Third-Party Packages Used
+
+The following Flutter plugins were used in this project to extend the app’s functionality. All packages were sourced from [pub.dev](https://pub.dev):
+
+| Package Name      | Purpose                                                                 |
+|-------------------|-------------------------------------------------------------------------|
+| [`cloud_firestore`](https://pub.dev/packages/cloud_firestore) | Used to interact with Firestore for storing and retrieving all match, team, player, and action data. |
+| [`firebase_core`](https://pub.dev/packages/firebase_core)     | Required to initialize Firebase in your Flutter app.                    |
+| [`image_picker`](https://pub.dev/packages/image_picker)       | Used to let users select player profile photos from camera or gallery.  |
+| [`path_provider`](https://pub.dev/packages/path_provider)     | Used to store and retrieve image files locally on the device.           |
+| [`share_plus`](https://pub.dev/packages/share_plus)           | Used to export match stats and logs via the native share dialog.        |
+
+---
+
 ## Files and Screens Overview
 
 ### Dart Models
