@@ -313,3 +313,9 @@ It plays a central role in abstracting Firestore operations away from the UI, en
 - Quarters auto-complete after 20 mins unless manually ended.
 - The app is designed for phones but can scale to tablets with flexible layout widgets all be it unreliably.
 - GitHub Desktop was used for version control during development.
+
+---
+
+## License
+
+This prototype is part of a university assessment and not licensed for commercial use. All original work © Joshua Crisford.
